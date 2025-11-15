@@ -77,7 +77,7 @@ const toggleTech = (techId: string) => {
             await createPortfolio({
                 title: formData.title,
                 description: formData.description,
-                image: formData.image,
+                image: portfolio.image,
                 technologies: techArray,
                 link: formData.link,
                 github: formData.github,
@@ -93,10 +93,10 @@ const toggleTech = (techId: string) => {
         }
     };
 
-    const handleImagePreview = (url: string) => {
-        setFormData({ ...formData, image: url });
-        setPreview(url);
-    }
+    // const handleImagePreview = (url: string) => {
+    //     setFormData({ ...formData, image: url });
+    //     setPreview(url);
+    // }
 
     return (
 <div className="max-w-4xl mx-auto text-gray-500">
@@ -156,49 +156,27 @@ const toggleTech = (techId: string) => {
                         </div>
 
                         {/* Image Upload */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Featured Image <span className="text-red-500">*</span>
-                            </label>
-                            <div className="flex items-center gap-4">
-                                <label className="flex-1 cursor-pointer">
-                                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-cyan-500 transition-colors text-center">
-                                        <div className="text-gray-400 mb-2">
-                                            📷 Click to upload image
-                                        </div>
-                                        <p className="text-xs text-gray-500">PNG, JPG up to 5MB</p>
-                                    </div>
-                                    <input
-                                        type="file"
-                                        accept="image/*"
-                                        onChange={handleImageUpload}
-                                        className="hidden"
-                                        required={!formData.image}
-                                    />
-                                </label>
-                            </div>
-
-                            {/* Image Preview */}
-                            {preview && (
-                                <div className="mt-4 relative">
-                                    <img
-                                        src={preview}
-                                        alt="Preview"
-                                        className="w-full h-64 object-cover rounded-lg border border-gray-300"
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            setPreview("");
-                                            setFormData({ ...formData, image: "" });
-                                        }}
-                                        className="absolute top-2 right-2 p-2 bg-red-500 text-white rounded-lg hover:bg-red-600 shadow-lg"
-                                    >
-                                        <X size={16} />
-                                    </button>
-                                </div>
-                            )}
-                        </div>
+         <div>
+          <label className="block mb-2">Featured Image</label>
+          <input
+            type="file"
+            accept="image/*"
+            onChange={handleImageUpload}
+            className="block w-full text-sm text-gray-500
+              file:mr-4 file:py-2 file:px-4
+              file:rounded-full file:border-0
+              file:text-sm file:font-semibold
+              file:bg-violet-50 file:text-blue-700
+              hover:file:bg-violet-100"
+          />
+          {portfolio.image && (
+            <img 
+              src={portfolio.image} 
+              alt="Preview" 
+              className="mt-2 h-32 w-auto object-cover rounded"
+            />
+          )}
+        </div>
 
                         {/* Technologies */}
                         <div>

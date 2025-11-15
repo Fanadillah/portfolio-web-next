@@ -6,6 +6,7 @@ import { collection, getDocs, query, orderBy, QuerySnapshot, DocumentData } from
 import { db } from '../../lib/firebase';
 import { FaGithub, FaExternalLinkAlt } from 'react-icons/fa';
 import { Portfolio } from '../../types/portfolio';
+import { getAllPortfolio } from '@/lib/posts';
 
 export default function PortfolioIndex() {
   const [projects, setProjects] = useState<Portfolio[]>([]);
@@ -13,33 +14,18 @@ export default function PortfolioIndex() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchProjects = async () => {
-      try {
-        const q = query(collection(db, 'portfolios'), orderBy('order', 'asc'));
-        const querySnapshot: QuerySnapshot<DocumentData> = await getDocs(q);
-        
-        const projectsData: Portfolio[] = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          title: doc.data().title,
-          description: doc.data().description,
-          image: doc.data().image,
-          technologies: doc.data().technologies || [],
-          link: doc.data().link,
-          github: doc.data().github,
-          order: doc.data().order,
-          createdAt: doc.data().createdAt?.toDate()
-        }));
-        
-        setProjects(projectsData);
-      } catch (err) {
-        console.error('Error fetching projects:', err);
-        setError('Gagal memuat data portfolio');
-      } finally {
+    const loadPortfolio = async () => {
+      try{
+        const data = await getAllPortfolio();
+        setProjects(data);
+      }catch(error) {
+        console.error("error Get Portfolio:", error)
+      }finally{
         setLoading(false);
       }
-    };
+    }
 
-    fetchProjects();
+    loadPortfolio();
   }, []);
 
   if (loading) {
@@ -86,6 +72,8 @@ export default function PortfolioIndex() {
                   <Image 
                     src={project.image} 
                     alt={project.title}
+                    width={400}
+                    height={400}
                     className="w-full h-48 object-cover"
                   />
                 )}

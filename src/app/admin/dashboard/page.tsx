@@ -7,6 +7,7 @@ import { db } from "../../../lib/firebase";
 import { Portfolio } from "../../../types/portfolio";
 import { Briefcase, Eye, GitBranch, TrendingUp } from "lucide-react";
 import Link from "next/link";
+import { getAllPortfolio } from "@/lib/posts";
 
 export default function AdminDashboardPage() {
     const [portfolios, setPortfolios] = useState<Portfolio[]>([]);
@@ -19,40 +20,25 @@ export default function AdminDashboardPage() {
     });
 
     useEffect(() => {
-        fetchPortfolios();
+        loadPosts();
     }, []);
 
-    const fetchPortfolios = async () => {
+    async function loadPosts() {
         try {
-            const q = query(collection(db, "portfolios"), orderBy("order", "asc"));
-            const querySnapshot = await getDocs(q);
-            const data : Portfolio[] = querySnapshot.docs.map((doc) => ({
-                id: doc.id,
-                title: doc.data().title,
-                description: doc.data().description,
-                image: doc.data().image,
-                technologies: doc.data().technologies || [],
-                link: doc.data().link || "",
-                github: doc.data().github || "",
-                order: doc.data().order,
-                createdAt: doc.data().createdAt.toDate(),
-            }));
-
-            setPortfolios(data);
-
-            // Calculate stats
+            const data = await getAllPortfolio();
+            setPortfolios(data)
             setStats({
                 total: data.length,
-                withDemo: data.filter((p) => p.link).length,
-                withGithub: data.filter((p) => p.github).length,
-                views: Math.floor(Math.random() * 1000) + 500, // Mock data
-            });
-        } catch (error) {
-            console.error("Error fetching portfolios:", error);
+                withDemo: data.filter((p)=> p.link).length,
+                withGithub: data.filter((p) => p.github !== "").length,
+                views: Math.floor(Math.random() * 1000) + 500
+            })
+        }catch(error) {
+            console.error("Error Get Data:", error)
         } finally {
             setLoading(false);
         }
-    };
+    }
 
     const StatCard = ({ icon: Icon, label, value, color }: any) => (
         <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">

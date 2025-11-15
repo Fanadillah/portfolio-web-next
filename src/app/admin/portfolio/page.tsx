@@ -7,7 +7,7 @@ import { db } from "../../../lib/firebase";
 import { Portfolio } from "../../../types/portfolio";
 import { Plus, Edit, Trash2, ExternalLink, Github, Search } from "lucide-react";
 import Link from "next/link";
-import { getAllPortfolio } from "@/lib/posts";
+import { getAllPortfolio, deletePortfolio } from "@/lib/posts";
 
 export default function PortfolioListPage() {
     const [portfolios, setPortfolios] = useState<Portfolio[]>([]);
@@ -35,7 +35,7 @@ export default function PortfolioListPage() {
 
         setDeleteLoading(id);
         try {
-            await deleteDoc(doc(db, "portfolios", id));
+            await deletePortfolio(id);
             setPortfolios(portfolios.filter((p) => p.id !== id));
             alert("Portfolio deleted successfully!");
         } catch (error) {
