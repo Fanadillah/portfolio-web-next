@@ -7,9 +7,11 @@ import { db } from "../../../lib/firebase";
 import { Portfolio } from "../../../types/portfolio";
 import { Plus, Edit, Trash2, ExternalLink, Github, Search } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { getAllPortfolio, deletePortfolio } from "@/lib/posts";
 
 export default function PortfolioListPage() {
+    const route = useRouter();
     const [portfolios, setPortfolios] = useState<Portfolio[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
@@ -188,12 +190,14 @@ export default function PortfolioListPage() {
 
                                 {/* Actions */}
                                 <div className="flex gap-2">
-                                    <Link
-                                        href={`/admin/portfolio/edit/${portfolio.id}`}
+                                    <button
+                                        onClick={() => {
+                                            route.push(`/admin/portfolio/edit/${portfolio.id}`)
+                                        }}
                                         className="flex-1 flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors text-sm font-medium"
                                     >
                                         <Edit size={16} /> Edit
-                                    </Link>
+                                    </button>
                                     <button
                                         onClick={() => handleDelete(portfolio.id)}
                                         disabled={deleteLoading === portfolio.id}

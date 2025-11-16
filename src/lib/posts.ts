@@ -121,6 +121,32 @@ export async function getAllPortfolio(limitCount?: number) {
         throw error
     }
 }
+//get Portfolio BY ID
+export async function getPortfolio(id: string): Promise<Portfolio | null> {
+    try {
+        const cacheKey = `post_$(id)`;
+
+        const cached = postsCache.get<Portfolio>(cacheKey);
+        if (cached) {
+            return cached;
+        }
+
+        const docRef = doc(db, "portfolio", id);
+        const docSnap = await getDoc(docRef);
+
+        if (!docSnap.exists()) return null;
+
+        const data = docSnap.data() as Omit<Portfolio, "id">;
+        const portfolio: Portfolio = { id: docSnap.id, ...data};
+
+        postsCache.set(cacheKey, portfolio);
+
+        return portfolio;
+    }catch (error) {
+        console.error("Error getting portfolio:", error)
+        throw error;
+    }
+}
 
 //update portfolio
 export async function updatePortfolio(id: string, data: Partial<Portfolio>) {

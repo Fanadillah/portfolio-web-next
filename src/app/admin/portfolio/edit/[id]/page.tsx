@@ -1,22 +1,28 @@
-'use client'
+"use client"
 
-import { useState, useRef } from 'react';
-import { Editor } from 'tinymce';
-import { useRouter } from 'next/navigation';
-import { createPortfolio } from '@/lib/posts';
-import { ArrowLeft, Search, Image as ImageIcon, Save, X } from "lucide-react";
-import { Timestamp } from 'firebase/firestore';
-import Link from 'next/link';
-import { TECHNOLOGIES } from '@/lib/constantsTechnologies';
+import React, { useEffect, useRef, useState } from "react";
+import { useRouter, useParams } from "next/navigation";
+import {getPortfolio, updatePortfolio} from "../../../../../lib/posts";
+import { Portfolio } from "@/types/portfolio";
+import { uploadToCloudinary } from "@/lib/cloudinary";
+import Link from "next/link";
+import { ArrowLeft, Save, X, Search, Loader } from "lucide-react";
+import { TECHNOLOGIES } from "@/lib/constantsTechnologies";
 
+export default function portfolioEditPage() {
+    const route = useRouter();
+    const params = useParams();
+    const id = params.id;
+    const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-export default function addPortfolioPage() {
-    const router = useRouter();
-    const editorRef = useRef<any>(null);
-    const [portfolio, setPortfolio] = useState({title: "", image: ""});
-    const [loading, setLoading] = useState(false);
-    const [selectedTech, setSelectedTech] = useState<string[]>([]);
+    const [portfolio, setPortfolio] = useState<Portfolio | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [fetching, setFetching] = useState(true);
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [previewSrc, setPreviewSrc] = useState<string | null>(null);
+    const [uploadingImage, setUploadingImage] = useState(false);
     const [searchTech, setSearchTech] = useState("");
+    const [selectedTech, setSelectedTech] = useState<string[]>([]);
     const [showTechDropdown, setShowTechDropdown] = useState(false);
     const [formData, setFormData] = useState({
         title: "",
@@ -24,29 +30,70 @@ export default function addPortfolioPage() {
         image: "",
         link: "",
         github: "",
-        order: 0
+        order: 0,
     })
 
-    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-        const form = new FormData();
-        form.append("file", file);
-        form.append("upload_preset", process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET!);
-        form.append("folder", "portfolio-image");
+    useEffect(() => {
+        if (id) loadPortfolio(id as string);
+    }, [id, route]);
 
-        const res = await fetch(
-            `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`,
-            { method:"POST", body: form}
-        );
-        const data = await res.json();
+    const loadPortfolio = async (portfolioId: string) => {
+        try {
+            const data = await getPortfolio(portfolioId);
+            setPortfolio(data);
+            if(data) {
+                setFormData({
+                        title: data.title || "",
+                        description: data.description || "",
+                        image: data.image || "",
+                        link: data.link || "",
+                        github: data.github || "",
+                        order: data.order || 0,
+                    });
+                    setPreviewSrc(data?.image ?? null);
+        
+                    if (data?.technologies && Array.isArray(data.technologies)) {
+                        const techIds = data.technologies
+                        .map((label: string) => {
+                            const tech = TECHNOLOGIES.find(
+                                (t) => t.label.toLowerCase() === label.toLowerCase()
+                            );
+                            return tech?.id;
+                        })
+                        .filter((id): id is NonNullable<typeof id> => id !== undefined);
+        
+                        setSelectedTech(techIds);
+                    }
+            }else {
+                alert("Portfolio not Found");
+                route.push("/admin/portfolio")
+            }
+        }catch (error) {
+            console.error("Error Get Portfoliio:", error);
+            alert("Failed to load portfolio");
+        } finally{
+            setFetching(false);
+            setLoading(false);
+        }
+    };
+    
 
-        if(data?.secure_url) {
-            setPortfolio((p) => ({ ...p, image: data.secure_url }));
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0] ?? null;
+        setSelectedFile(file);
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = () => {
+                setPreviewSrc(String(reader.result));
+            };
+            reader.readAsDataURL(file);
+        }else {
+            // revert preview to existing image if any
+            setPreviewSrc(portfolio?.image ?? null)
         }
     };
 
-const toggleTech = (techId: string) => {
+    const toggleTech = (techId: string) => {
         setSelectedTech((prev) =>
             prev.includes(techId)
                 ? prev.filter((id) => id !== techId)
@@ -64,39 +111,64 @@ const toggleTech = (techId: string) => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setLoading(true);
+        if (!portfolio) return;
+        if(selectedTech.length === 0) {
+            alert("Please select at least one tecnology");
+            return;
+        }
 
-        try{
+        try {
+            let image = portfolio.image ?? null;
+
             const techLabels = selectedTech.map(
                 (id) => TECHNOLOGIES.find((t) => t.id === id)?.label || id
             );
 
-            await createPortfolio({
+            if (selectedFile) {
+                setUploadingImage(true);
+                image = await uploadToCloudinary(selectedFile);
+                setUploadingImage(false);
+            }
+
+            console.log("🔍 DEBUG - Selected Tech IDs:", selectedTech);
+            console.log("🔍 DEBUG - Tech Labels:", techLabels);
+
+            const portfolioData = {
                 title: formData.title,
                 description: formData.description,
-                image: portfolio.image,
+                image: image,
                 technologies: techLabels,
                 link: formData.link,
                 github: formData.github,
                 order: Number(formData.order),
-                createdAt: Timestamp.now()
-            });
+            }
 
-            router.push("/admin/portfolio");
-        } catch (error){
-            console.error("Error Add Portoflio: ", error);
-        } finally{
-            setLoading(false)
+            await updatePortfolio(portfolio.id, portfolioData)
+            alert("Portfolio updated successfully!");
+            route.push("/admin/portfolio");
+        }catch(error) {
+            console.error("Error Update Portfolio:", error)
+            alert("Failed to update portfolio");
+        }finally {
+            setLoading(false);
         }
-    };
+    }
 
-    // const handleImagePreview = (url: string) => {
-    //     setFormData({ ...formData, image: url });
-    //     setPreview(url);
-    // }
+    if(fetching) {
+        return (
+            <div className="max-w-4x1 mx-auto">
+                <div className="flex items-center justify-center h-96">
+                    <div className="text-center">
+                        <Loader className="animate-spin mx-auto  mb-4 text-cyan-500" size={48}/>
+                        <p className="text-gray-600">Loading Portfolio data...</p>
+                    </div>
+                </div>
+            </div>
+        )
+    }
 
     return (
-<div className="max-w-4xl mx-auto text-gray-500">
+         <div className="max-w-4xl mx-auto text-gray-500">
             {/* Header */}
             <div className="mb-8">
                 <Link
@@ -106,8 +178,8 @@ const toggleTech = (techId: string) => {
                     <ArrowLeft size={20} />
                     Back to Portfolio
                 </Link>
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">Add New Portfolio</h1>
-                <p className="text-gray-600">Fill in the details to add a new project</p>
+                <h1 className="text-3xl font-bold text-gray-900 mb-2">Edit Portfolio</h1>
+                <p className="text-gray-600">Update your project details</p>
             </div>
 
             {/* Form */}
@@ -153,26 +225,28 @@ const toggleTech = (techId: string) => {
                         </div>
 
                         {/* Image Upload */}
-         <div>
-          <label className="block mb-2">Featured Image</label>
+        <div className="my-4">
+          <label className="block text-sm font-medium mb-2">Featured Image</label>
+
+          {previewSrc ? (
+            <img src={previewSrc} alt="Preview" className="w-64 h-auto mb-2 rounded" />
+          ) : (
+            <div className="w-64 h-40 bg-gray-100 flex items-center justify-center mb-2 text-gray-500">
+              No image
+            </div>
+          )}
+
           <input
+            ref={fileInputRef}
             type="file"
             accept="image/*"
-            onChange={handleImageUpload}
-            className="block w-full text-sm text-gray-500
-              file:mr-4 file:py-2 file:px-4
-              file:rounded-full file:border-0
-              file:text-sm file:font-semibold
-              file:bg-violet-50 file:text-blue-700
-              hover:file:bg-violet-100"
+            onChange={handleFileChange}
+            className="block"
           />
-          {portfolio.image && (
-            <img 
-              src={portfolio.image} 
-              alt="Preview" 
-              className="mt-2 h-32 w-auto object-cover rounded"
-            />
-          )}
+
+          <div className="text-sm text-gray-600 mt-2">
+            Select a new image to replace the featured image. Current image will be kept if none selected.
+          </div>
         </div>
 
                         {/* Technologies */}
@@ -229,7 +303,7 @@ const toggleTech = (techId: string) => {
                                             className="fixed inset-0 z-10"
                                             onClick={() => setShowTechDropdown(false)}
                                         />
-                                        
+
                                         {/* Dropdown Menu */}
                                         <div className="absolute z-20 w-full mt-2 bg-white border border-gray-300 rounded-lg shadow-xl max-h-80 overflow-hidden">
                                             {/* Search */}
@@ -388,12 +462,12 @@ const toggleTech = (techId: string) => {
                                         d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                                     />
                                 </svg>
-                                Saving...
+                                Updating...
                             </>
                         ) : (
                             <>
                                 <Save size={20} />
-                                Add Portfolio
+                                Update Portfolio
                             </>
                         )}
                     </button>
@@ -406,5 +480,6 @@ const toggleTech = (techId: string) => {
                 </div>
             </form>
         </div>
-    );        
+    );
+
 }
