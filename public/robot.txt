@@ -1,0 +1,19 @@
+# robots.txt - Taruh di folder public/
+
+# Allow all bots to crawl everything
+User-agent: *
+Allow: /
+
+# Except admin pages (protect admin area)
+Disallow: /admin/
+Disallow: /api/
+
+# Sitemap location
+Sitemap: https://hamdev-portfolio.vercel.app/sitemap.xml
+
+# Optional: Crawl-delay (seconds between requests)
+# Crawl-delay: 1
+
+# Block specific bots (optional)
+# User-agent: BadBot
+# Disallow: /
