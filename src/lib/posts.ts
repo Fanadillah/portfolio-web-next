@@ -124,7 +124,7 @@ export async function getAllPortfolio(limitCount?: number) {
 //get Portfolio BY ID
 export async function getPortfolio(id: string): Promise<Portfolio | null> {
     try {
-        const cacheKey = `post_$(id)`;
+        const cacheKey = `post_${id}`;
 
         const cached = postsCache.get<Portfolio>(cacheKey);
         if (cached) {

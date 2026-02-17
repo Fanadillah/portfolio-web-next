@@ -6,6 +6,10 @@ import {
   SiFirebase, 
   SiNodedotjs, 
   SiLaravel, 
+  SiPhp,
+  SiMysql,
+  SiBootstrap,
+
   SiTailwindcss 
 } from "react-icons/si";
 
@@ -58,6 +62,24 @@ export const TECHNOLOGIES = [
     icon: SiTailwindcss, 
     description: "Utility-first CSS framework untuk styling"
   },
+  {
+    id: "PHP",
+    label: "PHP",
+    icon: SiPhp,
+    description: "Bahasa pemrograman server-side untuk web development"
+  },
+  {
+    id: "MySQL",
+    label: "MySQL",
+    icon: SiMysql,
+    description: "Database management system untuk menyimpan data aplikasi"
+  },
+  {
+    id: "Bootstrap",
+    label: "Bootstrap",
+    icon: SiBootstrap,
+    description: "Framework CSS untuk membangun antarmuka responsif"
+  }
 ] as const;
 
 export type TechnologyId = typeof TECHNOLOGIES[number]['id'];

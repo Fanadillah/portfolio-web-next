@@ -2,11 +2,12 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { collection, getDocs, query, orderBy, QuerySnapshot, DocumentData } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { FaGithub, FaExternalLinkAlt } from 'react-icons/fa';
 import { Portfolio } from '../../types/portfolio';
-import { getAllPortfolio } from '@/lib/posts';
+import { getAllPortfolio, getPortfolio } from '@/lib/posts';
 
 export default function PortfolioIndex() {
   const [projects, setProjects] = useState<Portfolio[]>([]);
@@ -68,6 +69,7 @@ export default function PortfolioIndex() {
                 key={project.id} 
                 className="bg-slate-900 rounded-lg overflow-hidden hover:transform hover:scale-105 transition-all duration-300 shadow-lg"
               >
+                <Link href={`public/portfolio/${project.id}`}>
                 {project.image && (
                   <Image 
                     src={project.image} 
@@ -124,6 +126,7 @@ export default function PortfolioIndex() {
                     )}
                   </div>
                 </div>
+                </Link>
               </div>
             ))}
           </div>
