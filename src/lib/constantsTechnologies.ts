@@ -9,7 +9,8 @@ import {
   SiPhp,
   SiMysql,
   SiBootstrap,
-
+  SiHtml5,
+  SiCss3,
   SiTailwindcss 
 } from "react-icons/si";
 
@@ -79,6 +80,18 @@ export const TECHNOLOGIES = [
     label: "Bootstrap",
     icon: SiBootstrap,
     description: "Framework CSS untuk membangun antarmuka responsif"
+  },
+  {
+    id:"HTML5",
+    label: "HTML5",
+    icon: SiHtml5,
+    description: "Bahasa markup untuk membuat struktur halaman web"
+  },
+  {
+    id: "CSS3",
+    label: "CSS3",
+    icon: SiCss3,
+    description: "Bahasa styling untuk mengatur tampilan halaman web"
   }
 ] as const;
 
