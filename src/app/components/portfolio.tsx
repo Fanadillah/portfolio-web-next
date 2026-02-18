@@ -84,7 +84,7 @@ export default function PortfolioIndex() {
                   <h3 className="text-xl font-bold text-white mb-2">
                     {project.title}
                   </h3>
-                  <p className="text-gray-400 mb-4 text-sm">
+                  <p className="text-gray-400 mb-4 text-sm truncate">
                     {project.description}
                   </p>
                   
